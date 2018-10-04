@@ -1,0 +1,58 @@
+OBJECT Dataport 80000 Import Destination Structure
+{
+  OBJECT-PROPERTIES
+  {
+    Date=04.10.18;
+    Time=11:40:04;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    FieldStartDelimiter=@;
+    FieldEndDelimiter=@;
+    FieldSeparator=||;
+  }
+  DATAITEMS
+  {
+    { PROPERTIES
+      {
+        DataItemTable=Table104012;
+      }
+      FIELDS
+      {
+        { 1    ;7    ;TableNo              }
+        { 9    ;7    ;FieldNo              }
+        { 17   ;50   ;TableName            }
+        { 68   ;50   ;FieldName            }
+        { 119  ;50   ;Type                 }
+        { 170  ;7    ;FieldLength          }
+        { 178  ;50   ;Class                }
+        { 229  ;10   ;Enabled              }
+        { 240  ;50   ;TypeName             }
+        { 291  ;50   ;FieldCaption         }
+        { 342  ;7    ;RelationTableNo      }
+        { 350  ;7    ;RelationFieldNo      }
+        { 358  ;50   ;SQLDataType          }
+      }
+       }
+  }
+  REQUESTFORM
+  {
+    PROPERTIES
+    {
+      Width=9020;
+      Height=3410;
+    }
+    CONTROLS
+    {
+    }
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

@@ -1,0 +1,43 @@
+OBJECT Table 104012 Destination Structure
+{
+  OBJECT-PROPERTIES
+  {
+    Date=04.10.18;
+    Time=11:42:25;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+  }
+  FIELDS
+  {
+    { 1   ;   ;TableNo             ;Integer        }
+    { 2   ;   ;FieldNo             ;Integer        }
+    { 3   ;   ;TableName           ;Text50         }
+    { 4   ;   ;FieldName           ;Text50         }
+    { 5   ;   ;Type                ;Text50         }
+    { 6   ;   ;FieldLength         ;Integer        }
+    { 7   ;   ;Class               ;Text50         }
+    { 8   ;   ;Enabled             ;Boolean        }
+    { 9   ;   ;TypeName            ;Text50         }
+    { 10  ;   ;FieldCaption        ;Text80         }
+    { 11  ;   ;RelationTableNo     ;Integer        }
+    { 12  ;   ;RelationFieldNo     ;Integer        }
+    { 13  ;   ;SQLDataType         ;Text50         }
+  }
+  KEYS
+  {
+    {    ;TableNo                                 ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

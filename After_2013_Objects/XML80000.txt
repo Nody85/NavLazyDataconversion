@@ -1,0 +1,97 @@
+OBJECT XMLport 80000 Export Destination Structure
+{
+  OBJECT-PROPERTIES
+  {
+    Date=04.10.18;
+    Time=11:51:57;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    Direction=Export;
+    Format=Variable Text;
+    FieldDelimiter=@;
+    FieldSeparator=||;
+  }
+  ELEMENTS
+  {
+    { [{FC9AB1BE-4A6A-4FC1-B4AB-7E9042CD182F}];  ;Root                ;Element ;Text     }
+
+    { [{BD845E66-CB92-4E1E-98FA-1A0BC8BFBD60}];1 ;Field               ;Element ;Table   ;
+                                                  SourceTable=Table2000000041;
+                                                  SourceTableView=WHERE(Field7=CONST(0)) }
+
+    { [{7CEE9506-E870-48D9-A0FB-F2BC399D08B8}];2 ;TableNo             ;Element ;Field   ;
+                                                  DataType=Integer;
+                                                  SourceField=Field::TableNo }
+
+    { [{1ADED4B6-DB82-4CCC-AD67-502E7DC1A2D5}];2 ;No.                 ;Element ;Field   ;
+                                                  DataType=Integer;
+                                                  SourceField=Field::No. }
+
+    { [{B34F9C54-7844-4DAE-89A0-7D1C977A2420}];2 ;TableName           ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  SourceField=Field::TableName }
+
+    { [{DF70D74B-5AE6-4775-9E87-5D33D6C3BB9B}];2 ;FieldName           ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  SourceField=Field::FieldName }
+
+    { [{0EF7FB24-433C-45BC-9EA6-89F367EE21AF}];2 ;Type                ;Element ;Field   ;
+                                                  DataType=Option;
+                                                  SourceField=Field::Type }
+
+    { [{2B070BF8-D119-49F7-A270-E3910187BEE9}];2 ;Len                 ;Element ;Field   ;
+                                                  DataType=Integer;
+                                                  SourceField=Field::Len }
+
+    { [{6E56AACE-504E-469D-BFC4-3C1F55870B87}];2 ;Class               ;Element ;Field   ;
+                                                  DataType=Option;
+                                                  SourceField=Field::Class }
+
+    { [{D5916D3A-1867-407F-B27B-46E0056BDFF1}];2 ;Enable              ;Element ;Field   ;
+                                                  DataType=Boolean;
+                                                  SourceField=Field::Enabled }
+
+    { [{51696C90-EF19-4E2C-8833-808074826B48}];2 ;TypeName            ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  SourceField=Field::Type Name }
+
+    { [{9CC6AF39-2F28-4ABA-A428-B366405D44FD}];2 ;FieldCaption        ;Element ;Field   ;
+                                                  DataType=Text;
+                                                  SourceField=Field::Field Caption }
+
+    { [{743F7715-610B-4C50-91BB-F36A01B302F3}];2 ;RelationTableNo     ;Element ;Field   ;
+                                                  DataType=Integer;
+                                                  SourceField=Field::RelationTableNo }
+
+    { [{EDDB3447-AC38-40C3-8E97-82F175E3A80C}];2 ;RelationFieldNo     ;Element ;Field   ;
+                                                  DataType=Integer;
+                                                  SourceField=Field::RelationFieldNo }
+
+    { [{552AC941-C9E0-48DD-ABDD-79F07DAC85F3}];2 ;SQLDataType         ;Element ;Field   ;
+                                                  DataType=Option;
+                                                  SourceField=Field::SQLDataType }
+
+  }
+  EVENTS
+  {
+  }
+  REQUESTPAGE
+  {
+    PROPERTIES
+    {
+    }
+    CONTROLS
+    {
+    }
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+
