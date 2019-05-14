@@ -1,0 +1,31 @@
+OBJECT Table 170002 DummyTableTemplate
+{
+  OBJECT-PROPERTIES
+  {
+    Date=14.05.19;
+    Time=12:48:19;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+  }
+  FIELDS
+  {
+    { 1   ;   ;Code                ;Code10         }
+  }
+  KEYS
+  {
+    {    ;Code                                    ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

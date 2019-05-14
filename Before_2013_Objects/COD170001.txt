@@ -1,0 +1,170 @@
+OBJECT Codeunit 170001 Prequisit DataConversation
+{
+  OBJECT-PROPERTIES
+  {
+    Date=09.10.18;
+    Time=09:26:59;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+            IndexingFieldstoTransfer;
+          END;
+
+  }
+  CODE
+  {
+
+    PROCEDURE IndexingFieldstoTransfer@59000();
+    VAR
+      DestinationStructure@59000 : Record 170000;
+      FieldsToTransfer@59001 : Record 170001;
+      Field@59002 : Record 2000000041;
+    BEGIN
+      //Modified Fields
+      IF DestinationStructure.FINDSET THEN
+        REPEAT
+          IF FieldIsModified(DestinationStructure.TableNo,DestinationStructure.FieldNo) THEN BEGIN
+            FieldsToTransfer.INIT;
+            FieldsToTransfer.TableID := DestinationStructure.TableNo;
+            FieldsToTransfer.FieldID := DestinationStructure.FieldNo;
+            FieldsToTransfer.INSERT;
+          END;
+        UNTIL DestinationStructure.NEXT = 0;
+
+      //Missing Fields
+      IF Field.FINDSET THEN
+        REPEAT
+          IF NOT DestinationStructure.GET(Field.TableNo,Field."No.") THEN BEGIN
+            IF NOT SkipTable(Field.TableNo) THEN BEGIN
+              FieldsToTransfer.INIT;
+              FieldsToTransfer.TableID := Field.TableNo;
+              FieldsToTransfer.FieldID := Field."No.";
+              FieldsToTransfer.INSERT;
+            END;
+          END;
+        UNTIL Field.NEXT = 0;
+    END;
+
+    PROCEDURE FieldIsModified@59002(TableID@59000 : Integer;FieldID@59001 : Integer) : Boolean;
+    VAR
+      DestinationStructure@59002 : Record 170000;
+      SourceStructure@59003 : Record 2000000041;
+    BEGIN
+      IF IsUselessShit(TableID) THEN
+        EXIT(FALSE);
+
+      IF NOT SourceStructure.GET(TableID,FieldID) THEN
+        EXIT(FALSE);
+
+      IF (DestinationStructure.FieldLength <> SourceStructure.Len) AND (SourceStructure.Len > DestinationStructure.FieldLength)   THEN
+        EXIT(FALSE);
+
+      DestinationStructure.GET(TableID,FieldID);
+      IF (DestinationStructure.Class <> 'Normal') AND (SourceStructure.Class = SourceStructure.Class::Normal) THEN
+        EXIT(TRUE);
+
+      IF UPPERCASE(DestinationStructure.Type) <> UPPERCASE(FORMAT(SourceStructure.Type)) THEN
+        EXIT(TRUE);
+
+      IF DestinationStructure.Enabled <> SourceStructure.Enabled THEN
+        EXIT(TRUE);
+    END;
+
+    PROCEDURE IsUselessShit@59001(TableID@59000 : Integer) : Boolean;
+    BEGIN
+      //Nutzlosen Object Manager Advanced aus der Steinzeit ausgrenzen
+      IF (TableID < 11102035) OR (TableID > 11102099) THEN
+        EXIT(FALSE);
+
+      //Exclude UpgradeObjects
+      IF (TableID < 104001) OR (TableID > 200000) THEN
+        EXIT(FALSE);
+
+      EXIT(TRUE);
+    END;
+
+    PROCEDURE ClearFieldValue@59009(TableID@59001 : Integer;FieldID@59002 : Integer;VAR FieldReference@59000 : FieldRef);
+    VAR
+      TempDummyBlob@59003 : TEMPORARY Record 2000000001;
+      DummyDateFormula@59004 : DateFormula;
+      DummyDateTime@59005 : DateTime;
+      DummyGUID@59006 : GUID;
+      DummyRecordID@59007 : RecordID;
+      DummyDuration@59008 : Duration;
+    BEGIN
+      // CLEAN ALSO DEFAULT FIELDS
+      //IF NOT IsCustomerField(TableID,FieldID) THEN
+      //  EXIT;
+
+      IF IsPrimaryKeyField(TableID,FieldReference.NAME) THEN
+        EXIT;
+
+      CASE UPPERCASE(FORMAT(FieldReference.TYPE)) OF
+        'CODE','TEXT':
+          FieldReference.VALUE := '';
+        'DECIMAL','INTEGER','OPTION','BIGINTEGER':
+          FieldReference.VALUE := 0;
+        'BOOLEAN':
+          FieldReference.VALUE := FALSE;
+        'DATE':
+          FieldReference.VALUE := 0D;
+        'TIME':
+          FieldReference.VALUE := 0T;
+        'BLOB':
+          BEGIN
+            TempDummyBlob.INIT;
+            TempDummyBlob.INSERT;
+            TempDummyBlob.CALCFIELDS("BLOB Reference");
+            FieldReference.VALUE(TempDummyBlob."BLOB Reference");
+          END;
+        'DATEFORMULA':
+          FieldReference.VALUE := DummyDateFormula;
+        'DATETIME':
+          FieldReference.VALUE := DummyDateTime;
+        'GUID':
+          FieldReference.VALUE := DummyGUID;
+        'RecordID':
+          FieldReference.VALUE := DummyRecordID;
+        'DURATION':
+          FieldReference.VALUE := DummyDuration;
+        ELSE
+          ERROR('KEY ERROR');
+      END;
+    END;
+
+    PROCEDURE IsPrimaryKeyField@59017(TableID@59000 : Integer;FieldName@59001 : Text[50]) : Boolean;
+    VAR
+      Key@59002 : Record 2000000063;
+    BEGIN
+      Key.SETRANGE(TableNo,TableID);
+      Key.SETRANGE("No.",1,100);
+
+      Key.FINDSET;
+      IF Key.FINDSET THEN
+        REPEAT
+          IF (STRPOS(Key.Key,FieldName) <> 0) AND Key.Clustered THEN
+            EXIT(TRUE);
+          IF (STRPOS(Key.Key,FieldName) <> 0) AND (Key."No." = 1) THEN
+            EXIT(TRUE);
+        UNTIL Key.NEXT = 0;
+    END;
+
+    PROCEDURE SkipTable@59003(TableID@59000 : Integer) : Boolean;
+    VAR
+      DestinationStructure@59001 : Record 170000;
+    BEGIN
+      //Tables will be not deleted so they exist without DataTransfer
+      //Example Tables from 50000 to 100000 dont need to be moved
+      DestinationStructure.SETRANGE(TableNo,TableID);
+      IF NOT DestinationStructure.FINDFIRST THEN
+        EXIT(TRUE);
+    END;
+
+    BEGIN
+    END.
+  }
+}
+

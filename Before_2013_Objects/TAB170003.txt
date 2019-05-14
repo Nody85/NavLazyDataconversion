@@ -1,0 +1,34 @@
+OBJECT Table 170003 UncompressedBlob
+{
+  OBJECT-PROPERTIES
+  {
+    Date=14.05.19;
+    Time=12:47:57;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+  }
+  FIELDS
+  {
+    { 1   ;   ;ID                  ;Integer        }
+    { 2   ;   ;Blob Reference      ;BLOB          ;Compressed=No }
+    { 3   ;   ;Metadata            ;BLOB          ;Compressed=No }
+    { 4   ;   ;UserCode            ;BLOB          ;Compressed=No }
+  }
+  KEYS
+  {
+    {    ;ID                                      ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

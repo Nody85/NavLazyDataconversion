@@ -1,0 +1,254 @@
+OBJECT Codeunit 170002 LazyDataConversion
+{
+  OBJECT-PROPERTIES
+  {
+    Date=14.05.19;
+    Time=12:48:43;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+            GenerateTable(37,90037,'PROJCONV');
+            //CopyBlob(37);
+          END;
+
+  }
+  CODE
+  {
+
+    PROCEDURE GenerateTable@59000(ID@59000 : Integer;NewID@59001 : Integer;VersionList@59002 : Text[30]);
+    BEGIN
+      CloneTable(ID,NewID,VersionList);
+      CloneFields(ID,0,NewID,0,FALSE);
+      CloneMetaData(ID,NewID);
+    END;
+
+    PROCEDURE CloneTable@59002(ID@59000 : Integer;NewID@59001 : Integer;VersionList@59004 : Text[30]);
+    VAR
+      Object@59002 : Record 2000000001;
+      NewObject@59003 : Record 2000000001;
+      BlobOutStream@59006 : OutStream;
+      BlobInStream@59005 : InStream;
+    BEGIN
+      Object.SETRANGE(Type,Object.Type::Table);
+      Object.SETRANGE(ID,GETDummyTable);
+      IF Object.FINDSET THEN
+        REPEAT
+          Object.CALCFIELDS("BLOB Reference");
+          Object."BLOB Reference".CREATEINSTREAM(BlobInStream);
+          NewObject.INIT;
+          NewObject.Type := NewObject.Type::Table;
+          NewObject."Company Name" := Object."Company Name";
+          IF ID <> 0 THEN
+            NewObject.ID := NewID
+          ELSE
+            NewObject.ID := GetLastTableNo;
+          NewObject.Name := GenerateCopyTableName(Object.Name,'');
+          NewObject."Version List" := VersionList;
+          NewObject.Date := TODAY;
+          NewObject.Time := TIME;
+          NewObject."BLOB Reference".CREATEOUTSTREAM(BlobOutStream);
+          COPYSTREAM(BlobOutStream,BlobInStream);
+          //GetTemplateBlob(BlobOutStream,NewObject.ID,TRUE,NewObject.Name);
+          NewObject.INSERT;
+        UNTIL Object.NEXT = 0;
+    END;
+
+    PROCEDURE CloneMetaData@59010(OldID@59000 : Integer;NewID@59001 : Integer);
+    VAR
+      ObjectMetaData@59002 : Record 2000000071;
+      NewObjectMetaData@59003 : Record 2000000071;
+      BlobInStream@59004 : InStream;
+      BlobOutStream@59005 : OutStream;
+    BEGIN
+      ObjectMetaData.GET(1,OldID);
+      ObjectMetaData.CALCFIELDS(Metadata);
+      ObjectMetaData.Metadata.CREATEINSTREAM(BlobInStream);
+
+      IF NOT NewObjectMetaData.GET(1,NewID) THEN BEGIN
+        NewObjectMetaData.INIT;
+        NewObjectMetaData."Object Type" := 1;
+        NewObjectMetaData."Object ID" := NewID;
+        NewObjectMetaData.Metadata.CREATEOUTSTREAM(BlobOutStream);
+        COPYSTREAM(BlobOutStream,BlobInStream);
+        NewObjectMetaData.INSERT;
+      END ELSE BEGIN
+        NewObjectMetaData.Metadata.CREATEOUTSTREAM(BlobOutStream);
+        COPYSTREAM(BlobOutStream,BlobInStream);
+
+        NewObjectMetaData.MODIFY;
+      END;
+    END;
+
+    PROCEDURE CloneTableData@1000000000(ID@1000000000 : Integer;NewID@1000000001 : Integer);
+    VAR
+      Object@1000000003 : Record 2000000001;
+      NewObject@1000000002 : Record 2000000001;
+    BEGIN
+      Object.SETRANGE(Type,Object.Type::TableData);
+      Object.SETRANGE(ID,ID);
+      IF Object.FINDSET THEN
+        REPEAT
+          NewObject.INIT;
+          NewObject := Object;
+          NewObject.ID := NewID;
+          NewObject.INSERT;
+        UNTIL Object.NEXT = 0;
+    END;
+
+    PROCEDURE CloneFields@59001(TableID@59000 : Integer;FieldID@59001 : Integer;NewTableID@59002 : Integer;NewFieldID@59003 : Integer;CloneFlowfields@59004 : Boolean);
+    VAR
+      Fields@59005 : Record 2000000041;
+      NewFields@59006 : Record 2000000041;
+    BEGIN
+      Fields.SETRANGE(TableNo,TableID);
+
+      IF FieldID <> 0 THEN
+        Fields.SETRANGE("No.",FieldID);
+
+      IF NOT CloneFlowfields THEN
+        Fields.SETRANGE(Class,Fields.Class::Normal);
+
+      IF Fields.FINDSET THEN
+        REPEAT
+          IF NOT NewFields.GET(NewTableID,Fields."No.") THEN BEGIN
+            NewFields.INIT;
+            NewFields := Fields;
+            IF NewFields.Type = NewFields.Type::Option THEN
+               NewFields.Type :=  NewFields.Type::Integer;
+            NewFields.TableNo := NewTableID;
+            NewFields.SQLDataType := NewFields.SQLDataType::Varchar;
+            NewFields.RelationTableNo := 0;
+            NewFields.RelationFieldNo := 0;
+            NewFields.INSERT(TRUE);
+          END ELSE BEGIN
+            NewFields.TRANSFERFIELDS(Fields);
+            IF NewFields.Type = NewFields.Type::Option THEN
+               NewFields.Type :=  NewFields.Type::Integer;
+            NewFields.TableNo := NewTableID;
+            NewFields.SQLDataType := NewFields.SQLDataType::Varchar;
+            NewFields.RelationTableNo := 0;
+            NewFields.RelationFieldNo := 0;
+            NewFields.MODIFY(TRUE);
+          END;
+        UNTIL Fields.NEXT = 0;
+    END;
+
+    LOCAL PROCEDURE GetLastTableNo@59003() : Integer;
+    VAR
+      Object@59000 : Record 2000000001;
+    BEGIN
+      Object.SETRANGE(Type,Object.Type::Table);
+      Object.SETRANGE(Object.ID,104001,181000);
+
+      IF Object.FINDLAST THEN
+        EXIT(Object.ID + 1)
+      ELSE
+        EXIT(104001);
+    END;
+
+    LOCAL PROCEDURE GenerateCopyTableName@59007(OldName@59000 : Text[50];TablePrefix@59002 : Text[10]) : Text[50];
+    VAR
+      Object@59001 : Record 2000000001;
+    BEGIN
+      IF TablePrefix = '' THEN
+        TablePrefix := 'TEMP_';
+
+      EXIT(TablePrefix+COPYSTR(OldName,1,MAXSTRLEN(Object.Name)-STRLEN(TablePrefix)));
+    END;
+
+    PROCEDURE GetTemplateBlob@59005(VAR BlobOutStream@59000 : OutStream;TableID@59011 : Integer;DataPerCompany@59012 : Boolean;TableName@59013 : Text[30]);
+    VAR
+      ObjectTemplateLine1@59010 : TextConst 'DEU="<?xml version=""1.0"" encoding=""UTF-8"" standalone=""no""?>"';
+      ObjectTemplateTableDefinition@59009 : TextConst 'DEU="MetaTable xmlns=""urn:schemas-microsoft-com:dynamics:NAV:MetaObjects"" MetadataVersion=""80000"" ID=""%1"" DataPerCompany=""%2"" TableType=""Normal"" PasteIsValid=""1"" ObsoleteState=""No"" DataClassification=""CustomerContent"" Name=""%3"">"';
+      ObjectTemplateLine3@59008 : TextConst 'DEU=<Fields>';
+      ObjectTemplateFieldDefinition@59007 : TextConst 'DEU="<Field ID=""1"" Datatype=""Code"" DataLength=""10"" Enabled=""1"" FieldClass=""Normal"" Name=""Code"" BlankNumbers=""DontBlank"" BlankZero=""0"" SignDisplacement=""0"" Editable=""1"" NotBlank=""0"" Numeric=""0"" DateFormula=""0"" ClosingDates=""0"" Title=""0"" AutoIncrement=""0"" SQL_Timestamp=""0"" ValidateTableRelation=""1"" TestTableRelation=""1"" ExtendedDatatype=""None"" ExternalAccess=""Full"" ObsoleteState=""No"" DataClassification=""ToBeClassified""/>"';
+      ObjectTemplateLine5@59006 : TextConst 'DEU=</Fields>';
+      ObjectTemplateLine6@59005 : TextConst 'DEU=<Keys>';
+      ObjectTemplateKeyDefinition@59004 : TextConst 'DEU="<Key Enabled=""1"" Key=""Field1"" MaintainSQLIndex=""1"" MaintainSIFTIndex=""1"" Clustered=""1"" ObsoleteState=""No""/>"';
+      ObjectTemplateLine8@59003 : TextConst 'DEU=</Keys>';
+      ObjectTemplateLine9@59002 : TextConst 'DEU=<FieldGroups/>';
+      ObjectTemplateLine10@59001 : TextConst 'DEU=</MetaTable>';
+    BEGIN
+      BlobOutStream.WRITE(ObjectTemplateLine1);
+      BlobOutStream.WRITE(STRSUBSTNO(ObjectTemplateTableDefinition,TableID,DataPerCompany,TableName));
+      BlobOutStream.WRITE(ObjectTemplateLine3);
+      BlobOutStream.WRITE(ObjectTemplateFieldDefinition);
+      BlobOutStream.WRITE(ObjectTemplateLine5);
+      BlobOutStream.WRITE(ObjectTemplateLine6);
+      BlobOutStream.WRITE(ObjectTemplateKeyDefinition);
+      BlobOutStream.WRITE(ObjectTemplateLine8);
+      BlobOutStream.WRITE(ObjectTemplateLine9);
+      BlobOutStream.WRITE(ObjectTemplateLine10);
+    END;
+
+    PROCEDURE GetBlobMagic@59004(BlobInstream@59000 : InStream);
+    VAR
+      WTF@59003 : Text[1024];
+    BEGIN
+      WHILE NOT BlobInstream.EOS DO
+        BlobInstream.READ(WTF);
+    END;
+
+    PROCEDURE GETDummyTable@59006() : Integer;
+    VAR
+      Object@59000 : Record 2000000001;
+    BEGIN
+      Object.SETRANGE(Type,Object.Type::Table);
+      Object.SETRANGE(Name,'DummyTableTemplate');
+      IF Object.FINDFIRST THEN
+        EXIT(Object.ID)
+      ELSE
+        EXIT(170002);
+    END;
+
+    PROCEDURE ReBuildKey@59011(ID@59001 : Integer;NewID@59000 : Integer);
+    VAR
+      OldKey@59002 : Record 2000000063;
+      NewKey@59003 : Record 2000000063;
+    BEGIN
+      OldKey.SETRANGE(TableNo,ID);
+      OldKey.SETRANGE("No.",1,100);
+      OldKey.SETRANGE(Clustered,TRUE);
+      OldKey.FINDFIRST;
+
+      NewKey.GET(NewID,1);
+      NewKey.DELETE;
+      NewKey.INIT;
+      NewKey := OldKey;
+      NewKey.TableNo := NewID;
+      NewKey.SumIndexFields := '';
+      NewKey.INSERT;
+    END;
+
+    PROCEDURE CopyBlob@59008(TableID@59000 : Integer);
+    VAR
+      UncompressedBlob@59001 : Record 170003;
+      Object@59002 : Record 2000000001;
+      "Object Metadata"@59003 : Record 2000000071;
+      BlobInStream@59004 : InStream;
+      BlobOutStream@59005 : OutStream;
+    BEGIN
+      IF NOT UncompressedBlob.GET(TableID) THEN BEGIN
+        Object.SETRANGE(Type,Object.Type::Table);
+        Object.SETRANGE(ID,TableID);
+        Object.FINDFIRST;
+        Object.CALCFIELDS("BLOB Reference");
+        Object."BLOB Reference".CREATEINSTREAM(BlobInStream);
+        UncompressedBlob."Blob Reference".CREATEOUTSTREAM(BlobOutStream);
+        COPYSTREAM(BlobOutStream,BlobInStream);
+        UncompressedBlob.INSERT;
+
+        UncompressedBlob.CALCFIELDS("Blob Reference");
+        UncompressedBlob."Blob Reference".CREATEINSTREAM(BlobInStream);
+        GetBlobMagic(BlobInStream);
+      END;
+    END;
+
+    BEGIN
+    END.
+  }
+}
+
