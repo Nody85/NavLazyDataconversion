@@ -1,9 +1,9 @@
-OBJECT Dataport 80000 Import Destination Structure
+OBJECT Dataport 170000 Import Destination Structure
 {
   OBJECT-PROPERTIES
   {
     Date=04.10.18;
-    Time=11:40:04;
+    Time=16:47:15;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -17,7 +17,12 @@ OBJECT Dataport 80000 Import Destination Structure
   {
     { PROPERTIES
       {
-        DataItemTable=Table104012;
+        DataItemTable=Table170000;
+        OnAfterImportRecord=BEGIN
+                              IF "Destination Structure".SQLDataType = '99' THEN
+                                "Destination Structure".SQLDataType := 'Varchar';
+                            END;
+
       }
       FIELDS
       {

@@ -1,4 +1,4 @@
-OBJECT XMLport 80000 Export Destination Structure
+OBJECT XMLport 170000 Export Destination Structure
 {
   OBJECT-PROPERTIES
   {

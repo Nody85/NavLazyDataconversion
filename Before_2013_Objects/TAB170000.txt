@@ -1,14 +1,15 @@
-OBJECT Table 104012 Destination Structure
+OBJECT Table 170000 Destination Structure
 {
   OBJECT-PROPERTIES
   {
-    Date=04.10.18;
-    Time=11:42:25;
+    Date=07.10.18;
+    Time=23:13:50;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
   PROPERTIES
   {
+    DataPerCompany=No;
   }
   FIELDS
   {
@@ -28,7 +29,7 @@ OBJECT Table 104012 Destination Structure
   }
   KEYS
   {
-    {    ;TableNo                                 ;Clustered=Yes }
+    {    ;TableNo,FieldNo                         ;Clustered=Yes }
   }
   FIELDGROUPS
   {
