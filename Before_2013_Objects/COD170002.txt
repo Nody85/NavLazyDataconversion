@@ -2,21 +2,32 @@ OBJECT Codeunit 170002 LazyDataConversion
 {
   OBJECT-PROPERTIES
   {
-    Date=14.05.19;
-    Time=12:48:43;
+    Date=15.05.19;
+    Time=17:35:31;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
   PROPERTIES
   {
-    OnRun=BEGIN
-            GenerateTable(37,90037,'PROJCONV');
-            //CopyBlob(37);
+    OnRun=VAR
+            FieldsToTransfer@1000000000 : Record 170001;
+            LastTableID@1000000001 : Integer;
+          BEGIN
+            FieldsToTransfer.SETRANGE(TableID,1,1999999999);
+            IF FieldsToTransfer.FINDSET THEN
+              REPEAT
+                IF LastTableID <> FieldsToTransfer.TableID THEN BEGIN
+                  GenerateTable(FieldsToTransfer.TableID,GetLastTableNo,'PROJCONV');
+                  LastTableID := FieldsToTransfer.TableID;
+                END;
+              UNTIL FieldsToTransfer.NEXT = 0;
           END;
 
   }
   CODE
   {
+    VAR
+      Error001@1000000000 : TextConst 'DES=Could not establish Field %1 from Table %2!';
 
     PROCEDURE GenerateTable@59000(ID@59000 : Integer;NewID@59001 : Integer;VersionList@59002 : Text[30]);
     BEGIN
@@ -45,13 +56,13 @@ OBJECT Codeunit 170002 LazyDataConversion
             NewObject.ID := NewID
           ELSE
             NewObject.ID := GetLastTableNo;
-          NewObject.Name := GenerateCopyTableName(Object.Name,'');
+          NewObject.Name := FORMAT(ID);
+          NewObject.Caption := GenerateCopyTableName(ID,'');
           NewObject."Version List" := VersionList;
           NewObject.Date := TODAY;
           NewObject.Time := TIME;
           NewObject."BLOB Reference".CREATEOUTSTREAM(BlobOutStream);
           COPYSTREAM(BlobOutStream,BlobInStream);
-          //GetTemplateBlob(BlobOutStream,NewObject.ID,TRUE,NewObject.Name);
           NewObject.INSERT;
         UNTIL Object.NEXT = 0;
     END;
@@ -63,22 +74,23 @@ OBJECT Codeunit 170002 LazyDataConversion
       BlobInStream@59004 : InStream;
       BlobOutStream@59005 : OutStream;
     BEGIN
-      ObjectMetaData.GET(1,OldID);
-      ObjectMetaData.CALCFIELDS(Metadata);
-      ObjectMetaData.Metadata.CREATEINSTREAM(BlobInStream);
+      IF ObjectMetaData.GET(1,OldID) THEN BEGIN
+        ObjectMetaData.CALCFIELDS(Metadata);
+        ObjectMetaData.Metadata.CREATEINSTREAM(BlobInStream);
 
-      IF NOT NewObjectMetaData.GET(1,NewID) THEN BEGIN
-        NewObjectMetaData.INIT;
-        NewObjectMetaData."Object Type" := 1;
-        NewObjectMetaData."Object ID" := NewID;
-        NewObjectMetaData.Metadata.CREATEOUTSTREAM(BlobOutStream);
-        COPYSTREAM(BlobOutStream,BlobInStream);
-        NewObjectMetaData.INSERT;
-      END ELSE BEGIN
-        NewObjectMetaData.Metadata.CREATEOUTSTREAM(BlobOutStream);
-        COPYSTREAM(BlobOutStream,BlobInStream);
+        IF NOT NewObjectMetaData.GET(1,NewID) THEN BEGIN
+          NewObjectMetaData.INIT;
+          NewObjectMetaData."Object Type" := 1;
+          NewObjectMetaData."Object ID" := NewID;
+          NewObjectMetaData.Metadata.CREATEOUTSTREAM(BlobOutStream);
+          COPYSTREAM(BlobOutStream,BlobInStream);
+          NewObjectMetaData.INSERT;
+        END ELSE BEGIN
+          NewObjectMetaData.Metadata.CREATEOUTSTREAM(BlobOutStream);
+          COPYSTREAM(BlobOutStream,BlobInStream);
 
-        NewObjectMetaData.MODIFY;
+          NewObjectMetaData.MODIFY;
+        END;
       END;
     END;
 
@@ -122,7 +134,8 @@ OBJECT Codeunit 170002 LazyDataConversion
             NewFields.SQLDataType := NewFields.SQLDataType::Varchar;
             NewFields.RelationTableNo := 0;
             NewFields.RelationFieldNo := 0;
-            NewFields.INSERT(TRUE);
+            IF NOT NewFields.INSERT(TRUE) THEN
+              ERROR(STRSUBSTNO(Error001,FieldID,TableID));
           END ELSE BEGIN
             NewFields.TRANSFERFIELDS(Fields);
             IF NewFields.Type = NewFields.Type::Option THEN
@@ -141,22 +154,26 @@ OBJECT Codeunit 170002 LazyDataConversion
       Object@59000 : Record 2000000001;
     BEGIN
       Object.SETRANGE(Type,Object.Type::Table);
-      Object.SETRANGE(Object.ID,104001,181000);
+      Object.SETRANGE(ID,DATABASE::DummyTableTemplate,181000);
 
       IF Object.FINDLAST THEN
         EXIT(Object.ID + 1)
       ELSE
-        EXIT(104001);
+        EXIT(DATABASE::DummyTableTemplate);
     END;
 
-    LOCAL PROCEDURE GenerateCopyTableName@59007(OldName@59000 : Text[50];TablePrefix@59002 : Text[10]) : Text[50];
+    LOCAL PROCEDURE GenerateCopyTableName@59007(OLDID@59000 : Integer;TablePrefix@59002 : Text[10]) : Text[50];
     VAR
       Object@59001 : Record 2000000001;
     BEGIN
+      Object.SETRANGE(Type,Object.Type::Table);
+      Object.SETRANGE(ID,OLDID);
+      Object.FINDFIRST;
+
       IF TablePrefix = '' THEN
         TablePrefix := 'TEMP_';
 
-      EXIT(TablePrefix+COPYSTR(OldName,1,MAXSTRLEN(Object.Name)-STRLEN(TablePrefix)));
+      EXIT(TablePrefix+COPYSTR(Object.Name,1,MAXSTRLEN(Object.Name)-STRLEN(TablePrefix)));
     END;
 
     PROCEDURE GetTemplateBlob@59005(VAR BlobOutStream@59000 : OutStream;TableID@59011 : Integer;DataPerCompany@59012 : Boolean;TableName@59013 : Text[30]);
@@ -197,11 +214,11 @@ OBJECT Codeunit 170002 LazyDataConversion
       Object@59000 : Record 2000000001;
     BEGIN
       Object.SETRANGE(Type,Object.Type::Table);
-      Object.SETRANGE(Name,'DummyTableTemplate');
+      Object.SETRANGE(ID,DATABASE::DummyTableTemplate);
       IF Object.FINDFIRST THEN
         EXIT(Object.ID)
       ELSE
-        EXIT(170002);
+        EXIT(DATABASE::DummyTableTemplate);
     END;
 
     PROCEDURE ReBuildKey@59011(ID@59001 : Integer;NewID@59000 : Integer);
