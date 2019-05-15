@@ -1,9 +1,9 @@
-OBJECT Table 170002 DummyTableTemplate
+OBJECT Table 170050 DummyTableTemplate
 {
   OBJECT-PROPERTIES
   {
     Date=14.05.19;
-    Time=12:48:19;
+    Time=17:06:40;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -12,11 +12,11 @@ OBJECT Table 170002 DummyTableTemplate
   }
   FIELDS
   {
-    { 1   ;   ;Code                ;Code10         }
+    { 1   ;   ;DummyCode           ;Code10         }
   }
   KEYS
   {
-    {    ;Code                                    ;Clustered=Yes }
+    {    ;DummyCode                               ;Clustered=Yes }
   }
   FIELDGROUPS
   {
