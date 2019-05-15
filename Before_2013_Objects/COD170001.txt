@@ -2,8 +2,8 @@ OBJECT Codeunit 170001 Prequisit DataConversation
 {
   OBJECT-PROPERTIES
   {
-    Date=09.10.18;
-    Time=09:26:59;
+    Date=15.05.19;
+    Time=15:30:29;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -39,10 +39,12 @@ OBJECT Codeunit 170001 Prequisit DataConversation
         REPEAT
           IF NOT DestinationStructure.GET(Field.TableNo,Field."No.") THEN BEGIN
             IF NOT SkipTable(Field.TableNo) THEN BEGIN
-              FieldsToTransfer.INIT;
-              FieldsToTransfer.TableID := Field.TableNo;
-              FieldsToTransfer.FieldID := Field."No.";
-              FieldsToTransfer.INSERT;
+              IF Field.Class = Field.Class::Normal THEN BEGIN
+                FieldsToTransfer.INIT;
+                FieldsToTransfer.TableID := Field.TableNo;
+                FieldsToTransfer.FieldID := Field."No.";
+                FieldsToTransfer.INSERT;
+              END;
             END;
           END;
         UNTIL Field.NEXT = 0;
@@ -81,6 +83,9 @@ OBJECT Codeunit 170001 Prequisit DataConversation
 
       //Exclude UpgradeObjects
       IF (TableID < 104001) OR (TableID > 200000) THEN
+        EXIT(FALSE);
+
+      IF TableID > 2000000000 THEN
         EXIT(FALSE);
 
       EXIT(TRUE);
