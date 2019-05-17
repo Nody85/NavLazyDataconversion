@@ -2,8 +2,8 @@ OBJECT Codeunit 170001 Prequisit DataConversation
 {
   OBJECT-PROPERTIES
   {
-    Date=15.05.19;
-    Time=15:30:29;
+    Date=17.05.19;
+    Time=16:34:25;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -81,11 +81,16 @@ OBJECT Codeunit 170001 Prequisit DataConversation
       IF (TableID < 11102035) OR (TableID > 11102099) THEN
         EXIT(FALSE);
 
-      //Exclude UpgradeObjects
+      //Exclude Upgradeobjects
       IF (TableID < 104001) OR (TableID > 200000) THEN
         EXIT(FALSE);
 
+      //Exclude Systemobjects
       IF TableID > 2000000000 THEN
+        EXIT(FALSE);
+
+      //SpecialTables Excelbuffer,Changelog and so one
+      IF TableID IN [370,402,403,404,405] THEN
         EXIT(FALSE);
 
       EXIT(TRUE);
