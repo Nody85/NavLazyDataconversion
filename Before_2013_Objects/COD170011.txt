@@ -1,0 +1,110 @@
+OBJECT Codeunit 170011 RestoreData
+{
+  OBJECT-PROPERTIES
+  {
+    Date=17.05.19;
+    Time=14:17:25;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+          END;
+
+  }
+  CODE
+  {
+    VAR
+      CopyDataProgressDialog@59000 : TextConst 'DEU=Tabelle #####1#####:\Datensatz ####2#### von ####3#####;ENU=Table %1\Record ####2#### from ####3#####';
+
+    PROCEDURE CopyData@59001(FromID@59000 : Integer;FromFieldID@50001 : Integer;ToID@59001 : Integer;ToFieldID@50002 : Integer);
+    VAR
+      FromRecordRef@59002 : RecordRef;
+      ToRecordRef@59003 : RecordRef;
+      ToField@59004 : Record 2000000041;
+      FromField@59007 : Record 2000000041;
+      FromFieldReference@59005 : FieldRef;
+      ToFieldReference@59006 : FieldRef;
+      ProgressDialog@59008 : Dialog;
+      i@59009 : Integer;
+      DataCopyStatus@50000 : Record 170011;
+      DataHelperFunction@59010 : Codeunit 170012;
+      CopyToFieldID@50003 : Integer;
+      WellknownExceptions@50004 : Codeunit 170013;
+    BEGIN
+      //PrÅfungen von Fehlern aus vorherrigen DatenÅbernahmen
+      DataHelperFunction.PreCheckTables(FromID,ToID);
+      DataHelperFunction.PreCheckPrimaryKey(FromID,ToID,TRUE);
+      DataHelperFunction.PreCheckFieldIntegrity(FromID,ToID,TRUE);
+      DataHelperFunction.PreCheckDataPerCompanyIsEqual(FromID,ToID);
+      IF DataHelperFunction.TransferGlobalDataIsDouble(FromID) THEN
+        EXIT;
+
+      IF NOT DataHelperFunction.GetRestoreStatus(FromID) OR (FromFieldID <> 0) AND (ToFieldID <> 0) THEN BEGIN
+        FromRecordRef.OPEN(FromID);
+        IF GUIALLOWED THEN BEGIN
+          ProgressDialog.OPEN(CopyDataProgressDialog);
+          ProgressDialog.UPDATE(1,FORMAT(FromID));
+          ProgressDialog.UPDATE(3,FromRecordRef.COUNT);
+        END;
+        IF FromRecordRef.FINDSET(TRUE,TRUE) THEN BEGIN
+          ToRecordRef.OPEN(ToID);
+          REPEAT
+            IF GUIALLOWED THEN BEGIN
+              i += 1;
+              IF (i MOD 1000) = 0 THEN
+                ProgressDialog.UPDATE(2,i);
+            END;
+            //ToRecordRef.INIT;  INIT Killt Datenfelder hier muss ein GET hin
+            ToRecordRef.SETPOSITION(FromRecordRef.GETPOSITION(FALSE));
+            IF NOT ToRecordRef.GET(ToRecordRef.RECORDID) THEN
+              ToRecordRef.INIT;
+            ToField.SETRANGE(TableNo,ToID);
+            IF ToFieldID <> 0 THEN
+              ToField.SETRANGE("No.",ToFieldID);
+            ToField.SETRANGE(Class,ToField.Class::Normal);
+            IF ToField.FINDSET THEN
+              REPEAT
+                IF FromFieldID <> 0 THEN
+                  CopyToFieldID := FromFieldID
+                ELSE
+                  CopyToFieldID := WellknownExceptions.RedirectFieldRestore(FromID,ToField."No.");
+                IF FromField.GET(FromID,CopyToFieldID) THEN BEGIN
+                  FromFieldReference := FromRecordRef.FIELD(FromField."No.");
+                  ToFieldReference := ToRecordRef.FIELD(WellknownExceptions.RedirectFieldRestore(FromID,CopyToFieldID));
+                  IF FromField.Type = FromField.Type::BLOB THEN
+                    FromFieldReference.CALCFIELD;
+
+                  IF ToFieldReference.TYPE = FromFieldReference.TYPE THEN BEGIN
+                    IF (ToField.SQLDataType = ToField.SQLDataType::Integer) AND
+                      (FromField.SQLDataType = FromField.SQLDataType::Varchar)
+                    THEN BEGIN
+                      ToFieldReference.VALUE := DataHelperFunction.SQLDatatypeConvertToInteger(FromFieldReference.VALUE);
+                    END ELSE
+                      ToFieldReference.VALUE := FromFieldReference.VALUE;
+                  END ELSE BEGIN
+                    //DATATYPE MAPPING
+                    //Optionvalue -> Integer
+                  END;
+                END;
+              UNTIL ToField.NEXT = 0;
+              IF NOT ToRecordRef.INSERT THEN  //TODO Richtiges GET mit Case auf Insert oder Modify
+                ToRecordRef.MODIFY;
+              FromRecordRef.MODIFY;
+          UNTIL FromRecordRef.NEXT = 0;
+          IF GUIALLOWED THEN
+            ProgressDialog.CLOSE;
+        END;
+        FromRecordRef.CLOSE;
+        DataHelperFunction.LogNewTableState(ToID);
+        DataHelperFunction.PostCheckAmountOfRecords(FromID,ToID);
+        DataHelperFunction.SetRestoreStatusSuccessfull(FromID);
+      END;
+    END;
+
+    BEGIN
+    END.
+  }
+}
+

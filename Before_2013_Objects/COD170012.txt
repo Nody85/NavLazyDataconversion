@@ -1,0 +1,506 @@
+OBJECT Codeunit 170012 DataHelperFunction
+{
+  OBJECT-PROPERTIES
+  {
+    Date=17.05.19;
+    Time=14:10:56;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+          END;
+
+  }
+  CODE
+  {
+    VAR
+      TableError001@59002 : TextConst 'DEU=Die Tabelle %1 existiert nicht.;ENU=The Table %1 does not exist.';
+      KeyError001@59001 : TextConst 'DEU=Der SchlÅssel von Tabelle %1 ist unterschiedlich zu %2.;ENU=The Key from Table %1 is different to Table %2.';
+      KeyError002@59000 : TextConst 'DEU=Es wurde kein SchlÅssel fÅr Tabelle %1 gefunden.';
+      Error001@59008 : TextConst 'DEU=Tabelle %1 Feld %2 hat einen anderen Typ als Tabelle %3 Feld %2.;ENU=Table %1 Field %2 is has a other Type then Table %3 %2.';
+      Error002@59007 : TextConst 'DEU=Tabelle %1 Feld %2 hat einen anderen Namen als Tabelle %3 Feld %2.;ENU=Table %1 Field %2 is has a other Name then Table %3 Field %2.';
+      Error003@59006 : TextConst 'DEU=Tabelle %1 Feld %2 hat eine andere LÑnge als Tabelle %3 Feld %2.;ENU=Table %1 Field %2 is has a other Lenght then Table %3 Field %2.';
+      Error004@59005 : TextConst 'DEU=Tabelle %1 Feld %2 hat eine andere Klasse als Tabelle %3 Feld %2.;ENU=Table %1 Field %2 is has a other Class then Table %3 Field %2.';
+      Error005@59004 : TextConst 'DEU=Tabelle %3 Feld %2 hat nicht den SQLDatentyp SQLVARCHAR und kann Datenverlust verursachen.;ENU=Table %3 Field %2 is not an SQLVARCHAR and can cause Dataloss.';
+      Error006@59003 : TextConst 'DEU=Tabelle %1 enthÑlt nicht das Feld %2 aus der Tabelle %3.;ENU=Table %1 does not contain the Field %2 from Table %3.';
+      Error007@59011 : TextConst 'DEU=Nach dem kopieren der Daten sind nicht gleichviele DatensÑtze in der Tabelle %1 und Tabelle %2.;ENU=After the Copyprocess the Amount of Records is not the Same between Table %1 and Table %2.';
+      Error008@59010 : TextConst 'DEU=Datentype %1 wurde nicht gefunden.;ENU=Datatype %1 was not found.';
+      Error009@59009 : TextConst 'DEU=Das Flag DataPerCompany ist zwischen der Tabelle %1 und %2 nicht gleich.;ENU=The Flag DataPerCompany is not equal between the Table %1 and %2.';
+
+    PROCEDURE PreCheckTables@59006(FromID@59000 : Integer;ToID@59001 : Integer);
+    VAR
+      Object@59002 : Record 2000000001;
+    BEGIN
+      //QualityImprovment
+      Object.SETRANGE(Type,Object.Type::Table);
+      Object.SETRANGE(ID,FromID);
+      IF NOT Object.FINDFIRST THEN
+        ERROR(STRSUBSTNO(TableError001,FromID));
+
+      Object.SETRANGE(ID,ToID);
+      IF NOT Object.FINDFIRST THEN
+        ERROR(STRSUBSTNO(TableError001,ToID));
+    END;
+
+    PROCEDURE PreCheckPrimaryKey@59002(FromID@59001 : Integer;ToID@59000 : Integer;IsRestore@50000 : Boolean);
+    VAR
+      FromKey@59002 : Record 2000000063;
+      ToKey@59003 : Record 2000000063;
+      WellknownExceptions@50001 : Codeunit 170013;
+    BEGIN
+      //QualityImprovment
+      IF IsRestore AND WellknownExceptions.KeyBugList(FromID) THEN
+        EXIT;
+
+      FromKey.SETRANGE(TableNo,FromID);
+      //TODO Clustered Key is not always the First one
+      FromKey.SETRANGE("No.",1);
+      IF NOT FromKey.FINDFIRST THEN
+        ERROR(STRSUBSTNO(KeyError002,FromID));
+
+      ToKey.SETRANGE(TableNo,ToID);
+      //TODO Clustered Key is not always the First one
+      ToKey.SETRANGE("No.",1);
+      IF NOT ToKey.FINDFIRST THEN
+        ERROR(STRSUBSTNO(KeyError002,ToID));
+
+      IF FromKey.Key <> ToKey.Key THEN
+        ERROR(KeyError001,FromID,ToID);
+    END;
+
+    PROCEDURE PreCheckFieldIntegrity@59003(FromID@59000 : Integer;ToID@59001 : Integer;IsRestore@59004 : Boolean);
+    VAR
+      OldField@59002 : Record 2000000041;
+      NewField@59003 : Record 2000000041;
+      WellknownExceptions@50000 : Codeunit 170013;
+    BEGIN
+      //QualityImprovment
+      NewField.SETRANGE(TableNo,ToID);
+      IF NewField.FINDSET THEN
+        REPEAT
+          IF NOT WellknownExceptions.FieldBugsList(FromID,NewField."No.") OR
+            WellknownExceptions.FieldBugsList(ToID,NewField."No.")
+          THEN BEGIN
+            IF (NewField.Class = NewField.Class::Normal) THEN BEGIN
+              IF NOT OldField.GET(FromID,NewField."No.") AND NOT IsRestore THEN
+                ERROR(Error006,FromID,NewField."No.",ToID);
+              IF OldField.GET(FromID,NewField."No.") THEN BEGIN
+                IF (NewField.Type <> OldField.Type) AND
+                  NOT ((NewField.Type = NewField.Type::Integer) AND (OldField.Type = OldField.Type::Option))
+                THEN
+                  IF NOT IsRestore THEN
+                    ERROR(STRSUBSTNO(Error001,FromID,NewField."No.",ToID));
+                IF (NewField.FieldName <> OldField.FieldName) AND NOT IsRestore THEN
+                  ERROR(STRSUBSTNO(Error002,FromID,NewField."No.",ToID));
+                IF (NewField.Len < OldField.Len) AND (NewField.Type = OldField.Type) THEN
+                  ERROR(STRSUBSTNO(Error003,FromID,NewField."No.",ToID));
+                IF NewField.Class <> OldField.Class THEN
+                  ERROR(STRSUBSTNO(Error004,FromID,NewField."No.",ToID));
+                IF NewField.SQLDataType <> NewField.SQLDataType::Varchar THEN
+                  ERROR(STRSUBSTNO(Error005,FromID,NewField."No.",ToID));
+              END;
+            END;
+          END;
+        UNTIL NewField.NEXT = 0;
+    END;
+
+    PROCEDURE PreCheckDataPerCompanyIsEqual@59012(FromID@59001 : Integer;ToID@59000 : Integer);
+    VAR
+      OldObject@59002 : Record 2000000001;
+      NewObject@59003 : Record 2000000001;
+    BEGIN
+      OldObject.SETRANGE(Type,OldObject.Type::TableData);
+      OldObject.SETRANGE(ID,FromID);
+      OldObject.FINDFIRST;
+
+      NewObject.SETRANGE(Type,OldObject.Type::TableData);
+      NewObject.SETRANGE(ID,ToID);
+      NewObject.FINDFIRST;
+
+      IF OldObject."Company Name" <> NewObject."Company Name" THEN
+        ERROR(STRSUBSTNO(Error009,FromID,ToID));
+    END;
+
+    PROCEDURE PostCheckAmountOfRecords@59005(FromID@59000 : Integer;ToID@59001 : Integer);
+    VAR
+      FromCount@59004 : Integer;
+      ToCount@59005 : Integer;
+      FromRecordReference@59002 : RecordRef;
+      ToRecordReference@59003 : RecordRef;
+    BEGIN
+      IF ExcludeFromPostCheck(FromID) THEN
+        EXIT;
+
+      FromRecordReference.OPEN(FromID);
+      FromCount := FromRecordReference.COUNT;
+      FromRecordReference.CLOSE;
+
+      ToRecordReference.OPEN(ToID);
+      ToCount := ToRecordReference.COUNT;
+      ToRecordReference.CLOSE;
+
+      IF FromCount <> ToCount THEN
+        ERROR(STRSUBSTNO(Error007,FromID,ToID));
+    END;
+
+    PROCEDURE ExcludeFromPostCheck@59014(TableID@59000 : Integer) : Boolean;
+    BEGIN
+      CASE TableID OF
+        9: //DISPOSED
+          EXIT(TRUE);
+        15: //Default Routine Deletes Data from the Table after Copying
+          EXIT(TRUE);
+      END;
+    END;
+
+    PROCEDURE TransferGlobalDataIsDouble@59013(TableID@59000 : Integer) : Boolean;
+    VAR
+      DataCopyStatus@59001 : Record 170011;
+    BEGIN
+      IF NOT TableIsGlobalData(TableID) THEN
+        EXIT;
+
+      IF DataCopyStatus.GET(TableID) AND DataCopyStatus.Copied THEN
+        EXIT(TRUE);
+    END;
+
+    LOCAL PROCEDURE TableIsGlobalData@59018(TableID@59000 : Integer) : Boolean;
+    VAR
+      Object@59001 : Record 2000000001;
+    BEGIN
+      Object.SETRANGE(Object.Type,Object.Type::TableData);
+      Object.SETRANGE("Company Name",'');
+      Object.SETRANGE(ID,TableID);
+      EXIT(Object.FINDFIRST);
+    END;
+
+    PROCEDURE GetDefaultEmptyValue@59021(VAR FieldReference@59000 : FieldRef);
+    VAR
+      TempDummyBlob@59006 : TEMPORARY Record 2000000001;
+      DummyDateFormula@59005 : DateFormula;
+      DummyDateTime@59004 : DateTime;
+      DummyGUID@59003 : GUID;
+      DummyRecordID@59002 : RecordID;
+      DummyDuration@59001 : Duration;
+    BEGIN
+      CASE UPPERCASE(FORMAT(FieldReference.TYPE)) OF
+        'CODE','TEXT':
+          FieldReference.VALUE := '';
+        'DECIMAL','INTEGER','OPTION','BIGINTEGER':
+          FieldReference.VALUE := 0;
+        'BOOLEAN':
+          FieldReference.VALUE := FALSE;
+        'DATE':
+          FieldReference.VALUE := 0D;
+        'TIME':
+          FieldReference.VALUE := 0T;
+        'BLOB':
+          BEGIN
+            TempDummyBlob.INIT;
+            TempDummyBlob.INSERT;
+            TempDummyBlob.CALCFIELDS("BLOB Reference");
+            FieldReference.VALUE(TempDummyBlob."BLOB Reference");
+          END;
+        'DATEFORMULA':
+          FieldReference.VALUE := DummyDateFormula;
+        'DATETIME':
+          FieldReference.VALUE := DummyDateTime;
+        'GUID':
+          FieldReference.VALUE := DummyGUID;
+        'RECORDID':
+          FieldReference.VALUE := DummyRecordID;
+        'DURATION':
+          FieldReference.VALUE := DummyDuration;
+        ELSE
+          ERROR(STRSUBSTNO(Error008,FORMAT(FieldReference.TYPE)));
+      END;
+    END;
+
+    PROCEDURE ClearFieldValue@59009(TableID@59001 : Integer;FieldID@59002 : Integer;VAR FieldReference@59000 : FieldRef);
+    BEGIN
+      // CLEAN ALSO DEFAULT FIELDS
+      IF IsPrimaryKeyField(TableID,FieldReference.NAME) THEN
+        EXIT;
+
+      GetDefaultEmptyValue(FieldReference);
+    END;
+
+    PROCEDURE IsPrimaryKeyField@59017(TableID@59000 : Integer;FieldName@59001 : Text[50]) : Boolean;
+    VAR
+      Key@59002 : Record 2000000063;
+    BEGIN
+      Key.SETRANGE(TableNo,TableID);
+      Key.SETRANGE("No.",1,100);
+
+      Key.FINDSET;
+      IF Key.FINDSET THEN
+        REPEAT
+          IF (STRPOS(Key.Key,FieldName) <> 0) AND Key.Clustered THEN
+            EXIT(TRUE);
+          IF (STRPOS(Key.Key,FieldName) <> 0) AND (Key."No." = 1) THEN
+            EXIT(TRUE);
+        UNTIL Key.NEXT = 0;
+    END;
+
+    PROCEDURE CleanField@59019(TableID@59000 : Integer;FieldNo@59001 : Integer);
+    VAR
+      RecordReference@59002 : RecordRef;
+      FieldReference@59003 : FieldRef;
+      ProgressDialog@59004 : Dialog;
+    BEGIN
+      ProgressDialog.OPEN(STRSUBSTNO('%1 Fields will be Cleared',TableID));
+      RecordReference.OPEN(TableID);
+      IF RecordReference.FINDSET(TRUE,TRUE) THEN
+        REPEAT
+          FieldReference := RecordReference.FIELD(FieldNo);
+          ClearFieldValue(TableID,FieldNo,FieldReference);
+          RecordReference.MODIFY;
+        UNTIL RecordReference.NEXT = 0;
+      RecordReference.CLOSE;
+      ProgressDialog.CLOSE;
+    END;
+
+    PROCEDURE DeleteData@59008(FromID@59000 : Integer;ToID@59001 : Integer);
+    VAR
+      Object@59003 : Record 2000000001;
+      RecordReference@59004 : RecordRef;
+    BEGIN
+      //Works for each Company
+      Object.SETRANGE(Type,Object.Type::TableData);
+      Object.SETRANGE(ID,FromID,ToID);
+      IF Object.FINDSET(TRUE,TRUE) THEN
+        REPEAT
+          RecordReference.OPEN(Object.ID,FALSE,Object."Company Name");
+          RecordReference.DELETEALL;
+          RecordReference.CLOSE;
+        UNTIL Object.NEXT = 0;
+    END;
+
+    PROCEDURE DeleteObjects@59007(FromID@59001 : Integer;ToID@59000 : Integer);
+    VAR
+      Object@59002 : Record 2000000001;
+    BEGIN
+      Object.SETRANGE(ID,FromID,ToID);
+      Object.DELETEALL;
+    END;
+
+    PROCEDURE IsCustomerField@59010(TableID@59000 : Integer;FieldID@59001 : Integer) : Boolean;
+    BEGIN
+      //Exclude Customer Tables
+      IF TableID IN [50000..100000] THEN
+        EXIT(FALSE);
+      //Include Customer Field Range
+      IF FieldID IN [50000..100000] THEN
+        EXIT(TRUE);
+    END;
+
+    PROCEDURE DeleteTableByID@59011(TableID@1150000 : Integer);
+    VAR
+      ObjectTranslations@1150003 : Record 377;
+      Obj@1150002 : Record 2000000001;
+      Permissions@1150001 : Record 2000000005;
+    BEGIN
+      Obj.SETCURRENTKEY(Type,Name);
+      Obj.SETRANGE(Type,Obj.Type::Table);
+      Obj.SETRANGE(ID,TableID);
+      IF Obj.FINDFIRST THEN BEGIN
+        ObjectTranslations.SETRANGE(ObjectTranslations."Object Type",
+        ObjectTranslations."Object Type"::Table);
+        ObjectTranslations.SETRANGE(ObjectTranslations."Object ID",Obj.ID);
+        ObjectTranslations.DELETEALL;
+        WITH Permissions DO BEGIN
+          SETFILTER("Object Type",'%1|%2',"Object Type"::Table,"Object Type"::"Table Data");
+          SETRANGE("Object ID",Obj.ID);
+          DELETEALL;
+        END;
+        DeleteData(Obj.ID,Obj.ID);
+        Obj.DELETE;
+      END;
+    END;
+
+    PROCEDURE SetCopyStatusSuccessfull@59015(TableID@59001 : Integer);
+    VAR
+      DataCopyStatus@59000 : Record 170011;
+      Object@59002 : Record 2000000001;
+    BEGIN
+      Object.SETRANGE(Type,Object.Type::TableData);
+      Object.SETRANGE(ID,TableID);
+      Object.SETFILTER("Company Name",'%1|%2',COMPANYNAME,'');
+      Object.FINDFIRST;
+
+      IF NOT DataCopyStatus.GET(TableID,Object."Company Name") THEN BEGIN
+        DataCopyStatus.INIT;
+        DataCopyStatus.TableID := TableID;
+        DataCopyStatus.CompanyName := Object."Company Name";
+        DataCopyStatus.Copied := TRUE;
+        DataCopyStatus.INSERT;
+      END ELSE BEGIN
+        DataCopyStatus.Copied := TRUE;
+        DataCopyStatus.MODIFY;
+      END;
+
+      COMMIT;
+    END;
+
+    PROCEDURE SetRestoreStatusSuccessfull@59000(TableID@59001 : Integer);
+    VAR
+      DataCopyStatus@59000 : Record 170011;
+      TableInformation@59002 : Record 2000000028;
+    BEGIN
+      TableInformation.SETRANGE("Table No.",TableID);
+      TableInformation.SETFILTER("Company Name",'%1|%2',COMPANYNAME,'');
+      TableInformation.FINDFIRST;
+
+      IF NOT DataCopyStatus.GET(TableID,TableInformation."Company Name") THEN BEGIN
+        DataCopyStatus.INIT;
+        DataCopyStatus.TableID := TableID;
+        DataCopyStatus.CompanyName := TableInformation."Company Name";
+        DataCopyStatus.Restored := TRUE;
+        DataCopyStatus.INSERT;
+      END ELSE BEGIN
+        DataCopyStatus.Restored := TRUE;
+        DataCopyStatus.CompanyName := TableInformation."Company Name";
+        DataCopyStatus.MODIFY;
+      END;
+
+      COMMIT;
+    END;
+
+    PROCEDURE GetRestoreStatus@1000000001(TableID@1000000000 : Integer) : Boolean;
+    VAR
+      TableInformation@1000000001 : Record 2000000028;
+      DataCopyStatus@1000000002 : Record 170011;
+    BEGIN
+      TableInformation.SETRANGE("Table No.",TableID);
+      TableInformation.SETFILTER("Company Name",'%1|%2',COMPANYNAME,'');
+      TableInformation.FINDFIRST;
+
+      IF DataCopyStatus.GET(TableID,TableInformation."Company Name") THEN
+        EXIT(DataCopyStatus.Restored);
+    END;
+
+    PROCEDURE CreateOptionValueIndex@59020(SourceTableID@59000 : Integer;SourceFieldID@59001 : Integer;FieldReference@59002 : FieldRef;DestinationTableID@59004 : Integer;DestinationFieldID@59005 : Integer);
+    VAR
+      OptionValueMeaning@59003 : Record 170012;
+      OptionValueIndex@59006 : Integer;
+    BEGIN
+      IF NOT EVALUATE(OptionValueIndex,FORMAT(FieldReference.VALUE,0,2)) THEN
+        OptionValueIndex := 0;
+      IF NOT OptionValueMeaning.GET(SourceTableID,SourceFieldID,OptionValueIndex) THEN BEGIN
+        OptionValueMeaning.INIT;
+        OptionValueMeaning.SourceTableID := SourceTableID;
+        OptionValueMeaning.SourceFieldID := SourceFieldID;
+        OptionValueMeaning.OptionIndexNo := OptionValueIndex;
+        OptionValueMeaning.OptionValue := ExtractOptionString(FieldReference.OPTIONSTRING,OptionValueIndex);
+        OptionValueMeaning.OptionValueCaption := ExtractOptionString(FieldReference.OPTIONCAPTION,OptionValueIndex);
+        OptionValueMeaning.DestinationTableID := DestinationTableID;
+        OptionValueMeaning.DestinationFieldID := DestinationFieldID;
+        OptionValueMeaning.INSERT;
+      END;
+    END;
+
+    PROCEDURE ExtractOptionString@59016(OptionString@59000 : Text[1024];OptionIndex@59003 : Integer) Result : Text[250];
+    VAR
+      WorkString@59001 : Text[250];
+      FieldReference@59002 : FieldRef;
+      i@59004 : Integer;
+    BEGIN
+      FOR i := 0 TO OptionIndex DO BEGIN
+        IF STRPOS(OptionString,',') <> 0 THEN BEGIN
+          Result := COPYSTR(OptionString,1,STRPOS(OptionString,',')-1);
+          OptionString := COPYSTR(OptionString,STRPOS(OptionString,',')+1);
+        END ELSE
+          Result := COPYSTR(OptionString,1);
+      END;
+    END;
+
+    PROCEDURE SetPreconditionCompleted@59022();
+    VAR
+      DefaultRoutineisFinished@59000 : Record 170010;
+    BEGIN
+      IF NOT DefaultRoutineisFinished.GET(COMPANYNAME) THEN BEGIN
+        DefaultRoutineisFinished.INIT;
+        DefaultRoutineisFinished.CompanyName := COMPANYNAME;
+        DefaultRoutineisFinished."Precondition Completed" := TRUE;
+        DefaultRoutineisFinished.INSERT;
+        COMMIT;
+      END;
+    END;
+
+    PROCEDURE PreconditionIsCompleted@59025() : Boolean;
+    VAR
+      DefaultRoutineisFinished@59001 : Record 170010;
+    BEGIN
+      IF NOT DefaultRoutineisFinished.GET(COMPANYNAME) THEN
+        EXIT(FALSE);
+      EXIT(DefaultRoutineisFinished."Precondition Completed");
+    END;
+
+    PROCEDURE DeactivateChangeLog@59001();
+    VAR
+      ChangeLogSetup@59000 : Record 402;
+    BEGIN
+      ChangeLogSetup.GET;
+      ChangeLogSetup."Change Log Activated" := FALSE;
+      ChangeLogSetup.MODIFY;
+    END;
+
+    PROCEDURE SQLDatatypeConvertToInteger@1000000000(Variant@1000000000 : Variant) : Integer;
+    VAR
+      DatatypeInteger@1000000001 : Integer;
+    BEGIN
+      EVALUATE(DatatypeInteger,Variant);
+      EXIT(DatatypeInteger);
+    END;
+
+    PROCEDURE LogOriginalTableState@1000000002(TableID@1000000001 : Integer);
+    VAR
+      DataQuantityCheck@1000000000 : Record 170013;
+      TableInformation@1000000002 : Record 2000000028;
+    BEGIN
+      TableInformation.SETFILTER("Company Name",'%1|%2','',COMPANYNAME);
+      TableInformation.SETRANGE("Table No.",TableID);
+      TableInformation.FINDFIRST;
+      IF NOT DataQuantityCheck.GET(COMPANYNAME,TableID) THEN BEGIN
+        DataQuantityCheck.INIT;
+        DataQuantityCheck."Company Name" := COMPANYNAME;
+        DataQuantityCheck.TableID := TableID;
+        DataQuantityCheck."Original Amount Of Records" := TableInformation."No. of Records";
+        DataQuantityCheck."Original Table Size" := TableInformation."Size (KB)";
+        DataQuantityCheck.INSERT;
+      END ELSE BEGIN
+        DataQuantityCheck."Original Amount Of Records" := TableInformation."No. of Records";
+        DataQuantityCheck."Original Table Size" := TableInformation."Size (KB)";
+        DataQuantityCheck.MODIFY;
+      END;
+    END;
+
+    PROCEDURE LogNewTableState@1000000003(TableID@1000000002 : Integer);
+    VAR
+      DataQuantityCheck@1000000001 : Record 170013;
+      TableInformation@1000000000 : Record 2000000028;
+    BEGIN
+      TableInformation.SETFILTER("Company Name",'%1|%2','',COMPANYNAME);
+      TableInformation.SETRANGE("Table No.",TableID);
+      TableInformation.FINDFIRST;
+      IF NOT DataQuantityCheck.GET(COMPANYNAME,TableID) THEN BEGIN
+        DataQuantityCheck.INIT;
+        DataQuantityCheck."Company Name" := COMPANYNAME;
+        DataQuantityCheck.TableID := TableID;
+        DataQuantityCheck."New Amount Of Records" := TableInformation."No. of Records";
+        DataQuantityCheck."New Table Size" := TableInformation."Size (KB)";
+        DataQuantityCheck.INSERT;
+      END ELSE BEGIN
+        DataQuantityCheck."New Amount Of Records" := TableInformation."No. of Records";
+        DataQuantityCheck."New Table Size" := TableInformation."Size (KB)";
+        DataQuantityCheck.MODIFY;
+      END;
+    END;
+
+    BEGIN
+    END.
+  }
+}
+

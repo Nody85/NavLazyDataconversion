@@ -1,0 +1,38 @@
+OBJECT Table 170012 OptionValueMeaning
+{
+  OBJECT-PROPERTIES
+  {
+    Date=19.10.18;
+    Time=10:07:56;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+  }
+  FIELDS
+  {
+    { 10  ;   ;SourceTableID       ;Integer        }
+    { 20  ;   ;SourceFieldID       ;Integer        }
+    { 30  ;   ;OptionIndexNo       ;Integer        }
+    { 40  ;   ;OptionValue         ;Text250        }
+    { 41  ;   ;OptionValueCaption  ;Text250        }
+    { 50  ;   ;DestinationTableID  ;Integer        }
+    { 60  ;   ;DestinationFieldID  ;Integer        }
+  }
+  KEYS
+  {
+    {    ;SourceTableID,SourceFieldID,OptionIndexNo;
+                                                   Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

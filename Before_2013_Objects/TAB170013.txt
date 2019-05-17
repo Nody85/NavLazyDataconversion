@@ -1,0 +1,36 @@
+OBJECT Table 170013 DataQuantityCheck
+{
+  OBJECT-PROPERTIES
+  {
+    Date=16.05.19;
+    Time=13:45:37;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+  }
+  FIELDS
+  {
+    { 10  ;   ;Company Name        ;Text30         }
+    { 20  ;   ;TableID             ;Integer        }
+    { 30  ;   ;Original Amount Of Records;Integer  }
+    { 40  ;   ;Original Table Size ;Integer        }
+    { 50  ;   ;New Amount Of Records;Integer       }
+    { 60  ;   ;New Table Size      ;Integer        }
+  }
+  KEYS
+  {
+    {    ;Company Name,TableID                    ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

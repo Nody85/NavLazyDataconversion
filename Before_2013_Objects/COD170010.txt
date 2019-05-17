@@ -1,0 +1,102 @@
+OBJECT Codeunit 170010 SaveData
+{
+  OBJECT-PROPERTIES
+  {
+    Date=17.05.19;
+    Time=14:34:43;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    OnRun=VAR
+            LazyDataConversion@1000000000 : Codeunit 170002;
+            Object@1000000001 : Record 2000000001;
+            FromID@1000000002 : Integer;
+          BEGIN
+            Object.SETRANGE(Type,Object.Type::Table);
+            Object.SETFILTER("Version List",STRSUBSTNO('@*%1*',LazyDataConversion.GetProjectCode));
+            IF Object.FINDSET THEN
+              REPEAT
+                EVALUATE(FromID,Object.Name); //Name Should be the Original TABLE ID
+                CopyData(FromID,Object.ID);
+              UNTIL Object.NEXT = 0;
+          END;
+
+  }
+  CODE
+  {
+    VAR
+      CopyDataProgressDialog@59000 : TextConst 'DEU=Tabelle #####1#####:\Datensatz ####2#### von ####3#####;ENU=Table %1\Record ####2#### from ####3#####';
+
+    PROCEDURE CopyData@59001(FromID@59000 : Integer;ToID@59001 : Integer);
+    VAR
+      FromRecordRef@59002 : RecordRef;
+      ToRecordRef@59003 : RecordRef;
+      ToField@59004 : Record 2000000041;
+      FromField@59007 : Record 2000000041;
+      FromFieldReference@59005 : FieldRef;
+      ToFieldReference@59006 : FieldRef;
+      ProgressDialog@59008 : Dialog;
+      i@59009 : Integer;
+      DataCopyStatus@59010 : Record 170011;
+      DataHelperFunction@59011 : Codeunit 170012;
+    BEGIN
+      //PrÅfungen von Fehlern aus vorherrigen DatenÅbernahmen
+      DataHelperFunction.PreCheckTables(FromID,ToID);
+      DataHelperFunction.PreCheckPrimaryKey(FromID,ToID,FALSE);
+      DataHelperFunction.PreCheckFieldIntegrity(FromID,ToID,FALSE);
+      DataHelperFunction.PreCheckDataPerCompanyIsEqual(FromID,ToID);
+      IF DataHelperFunction.TransferGlobalDataIsDouble(FromID) THEN
+        EXIT;
+
+      IF NOT DataCopyStatus.GET(FromID,COMPANYNAME) THEN BEGIN
+        FromRecordRef.OPEN(FromID);
+        ProgressDialog.OPEN(CopyDataProgressDialog);
+        ProgressDialog.UPDATE(1,FORMAT(FromID));
+        ProgressDialog.UPDATE(3,FromRecordRef.COUNT);
+        IF FromRecordRef.FINDSET(TRUE,TRUE) THEN BEGIN
+          ToRecordRef.OPEN(ToID);
+          REPEAT
+            i += 1;
+            IF (i MOD 1000) = 0 THEN
+              ProgressDialog.UPDATE(2,i);
+            ToRecordRef.SETPOSITION(FromRecordRef.GETPOSITION(FALSE));
+            IF NOT ToRecordRef.GET(ToRecordRef.RECORDID) THEN
+              ToRecordRef.INIT;
+            ToField.SETRANGE(TableNo,ToID);
+            ToField.SETRANGE(Class,ToField.Class::Normal);
+            IF ToField.FINDSET THEN
+              REPEAT
+                IF FromField.GET(FromID,ToField."No.") THEN BEGIN
+                  FromFieldReference := FromRecordRef.FIELD(FromField."No.");
+                  ToFieldReference := ToRecordRef.FIELD(ToField."No.");
+                  IF FromField.Type = FromField.Type::BLOB THEN
+                    FromFieldReference.CALCFIELD;
+                  IF FromField.Type = FromField.Type::Option THEN
+                    DataHelperFunction.CreateOptionValueIndex(FromID,FromField."No.",FromFieldReference,ToID,ToField."No.");
+                  DataHelperFunction.GetDefaultEmptyValue(ToFieldReference);
+                  IF FORMAT(ToFieldReference.VALUE) <> FORMAT(FromFieldReference.VALUE) THEN BEGIN
+                    ToFieldReference.VALUE := FromFieldReference.VALUE;
+                    DataHelperFunction.ClearFieldValue(FromID,FromField."No.",FromFieldReference);
+                  END;
+                END;
+              UNTIL ToField.NEXT = 0;
+              IF NOT ToRecordRef.INSERT THEN  //TODO Richtiges GET mit Case auf Insert oder Modify
+                ToRecordRef.MODIFY;
+              FromRecordRef.MODIFY;
+          UNTIL FromRecordRef.NEXT = 0;
+          ProgressDialog.CLOSE;
+        END;
+        FromRecordRef.CLOSE;
+        DataHelperFunction.LogOriginalTableState(FromID);
+        DataHelperFunction.PostCheckAmountOfRecords(FromID,ToID);
+        DataHelperFunction.SetCopyStatusSuccessfull(FromID);
+      END;
+    END;
+
+    BEGIN
+    END.
+  }
+}
+

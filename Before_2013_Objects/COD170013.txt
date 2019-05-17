@@ -1,0 +1,72 @@
+OBJECT Codeunit 170013 WellknownExceptions
+{
+  OBJECT-PROPERTIES
+  {
+    Date=16.05.19;
+    Time=14:26:05;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+          END;
+
+  }
+  CODE
+  {
+
+    PROCEDURE FieldBugsList@59004(TableID@59001 : Integer;FieldID@59000 : Integer) : Boolean;
+    BEGIN
+      CASE TableID OF
+        15:
+          BEGIN
+            CASE FieldID OF
+              1:
+                // BUG in SwissVersion NAV2009 Field 1 is Text 30 instead of Code 20
+                EXIT(TRUE);
+            END;
+          END;
+        17:
+          BEGIN
+            CASE FieldID OF
+              3:
+                // BUG in SwissVersion NAV2009 Field 3 is Text 30 instead of Code 20
+                EXIT(TRUE);
+              10:
+                // BUG in SwissVersion NAV2009 Field 10 is Text 30 instead of Code 20
+                EXIT(TRUE);
+            END;
+          END;
+      END;
+
+      EXIT(FALSE);
+    END;
+
+    PROCEDURE KeyBugList@50000(TableID@50000 : Integer) : Boolean;
+    BEGIN
+      CASE TableID OF
+      //IF Key is Different between TempTable and Destination Table then ignore with Entry
+      //  179625:
+      //    EXIT(TRUE);
+      END;
+    END;
+
+    PROCEDURE RedirectFieldRestore@50001(SourceTableID@50000 : Integer;SourceFieldID@50001 : Integer) : Integer;
+    BEGIN
+      CASE SourceTableID OF
+      //STORE Table 18 Field 50000
+      //RESTORE Table 18 Field 60000
+      //  18:
+      //    IF SourceFieldID = 50000 THEN
+      //      EXIT(60000);
+      END;
+
+      EXIT(SourceFieldID);
+    END;
+
+    BEGIN
+    END.
+  }
+}
+

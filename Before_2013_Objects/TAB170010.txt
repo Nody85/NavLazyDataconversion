@@ -1,0 +1,33 @@
+OBJECT Table 170010 DefaultRoutineisFinished
+{
+  OBJECT-PROPERTIES
+  {
+    Date=16.05.19;
+    Time=13:44:00;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    DataPerCompany=No;
+  }
+  FIELDS
+  {
+    { 1   ;   ;CompanyName         ;Text50         }
+    { 2   ;   ;Precondition Completed;Boolean      }
+  }
+  KEYS
+  {
+    {    ;CompanyName                             ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

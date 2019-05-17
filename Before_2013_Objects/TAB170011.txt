@@ -1,0 +1,35 @@
+OBJECT Table 170011 DataCopyStatus
+{
+  OBJECT-PROPERTIES
+  {
+    Date=16.05.19;
+    Time=13:44:09;
+    Modified=Yes;
+    Version List=LAZYDATACONV;
+  }
+  PROPERTIES
+  {
+    DataPerCompany=No;
+  }
+  FIELDS
+  {
+    { 10  ;   ;TableID             ;Integer        }
+    { 20  ;   ;CompanyName         ;Text50         }
+    { 30  ;   ;Copied              ;Boolean        }
+    { 40  ;   ;Restored            ;Boolean        }
+  }
+  KEYS
+  {
+    {    ;TableID,CompanyName                     ;Clustered=Yes }
+  }
+  FIELDGROUPS
+  {
+  }
+  CODE
+  {
+
+    BEGIN
+    END.
+  }
+}
+

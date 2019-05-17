@@ -2,8 +2,8 @@ OBJECT Codeunit 170002 LazyDataConversion
 {
   OBJECT-PROPERTIES
   {
-    Date=15.05.19;
-    Time=17:35:31;
+    Date=17.05.19;
+    Time=14:14:41;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -17,7 +17,7 @@ OBJECT Codeunit 170002 LazyDataConversion
             IF FieldsToTransfer.FINDSET THEN
               REPEAT
                 IF LastTableID <> FieldsToTransfer.TableID THEN BEGIN
-                  GenerateTable(FieldsToTransfer.TableID,GetLastTableNo,'PROJCONV');
+                  GenerateTable(FieldsToTransfer.TableID,GetLastTableNo,GetProjectCode);
                   LastTableID := FieldsToTransfer.TableID;
                 END;
               UNTIL FieldsToTransfer.NEXT = 0;
@@ -262,6 +262,12 @@ OBJECT Codeunit 170002 LazyDataConversion
         UncompressedBlob."Blob Reference".CREATEINSTREAM(BlobInStream);
         GetBlobMagic(BlobInStream);
       END;
+    END;
+
+    PROCEDURE GetProjectCode@1000000001() : Text[30];
+    BEGIN
+      //Your Project Code
+      EXIT('PROJCONV');
     END;
 
     BEGIN
