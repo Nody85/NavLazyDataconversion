@@ -2,8 +2,8 @@ OBJECT Codeunit 170012 DataHelperFunction
 {
   OBJECT-PROPERTIES
   {
-    Date=17.05.19;
-    Time=14:10:56;
+    Date=03.09.19;
+    Time=14:41:07;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -497,6 +497,28 @@ OBJECT Codeunit 170012 DataHelperFunction
         DataQuantityCheck."New Table Size" := TableInformation."Size (KB)";
         DataQuantityCheck.MODIFY;
       END;
+    END;
+
+    PROCEDURE SaveDataCopy@1000000004(FromID@1000000000 : Integer;ToID@1000000001 : Integer);
+    VAR
+      Object@1000000002 : Record 2000000001;
+      LazyDataConversion@1000000003 : Codeunit 170002;
+      SaveData@1000000004 : Codeunit 170010;
+    BEGIN
+      IF FromID <> 0 THEN
+        Object.SETFILTER(Name,FORMAT(FromID));
+
+      IF ToID <> 0 THEN
+        Object.SETRANGE(ID,ToID);
+
+      Object.SETFILTER("Version List",STRSUBSTNO('*%1*',LazyDataConversion.GetProjectCode));
+
+      IF Object.FINDSET THEN
+        REPEAT
+          EVALUATE(FromID,Object.Name);
+          ToID := Object.ID;
+          SaveData.CopyData(FromID,ToID);
+        UNTIL Object.NEXT = 0;
     END;
 
     BEGIN
