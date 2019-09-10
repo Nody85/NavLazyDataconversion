@@ -2,8 +2,8 @@ OBJECT Codeunit 170013 WellknownExceptions
 {
   OBJECT-PROPERTIES
   {
-    Date=16.05.19;
-    Time=14:26:05;
+    Date=09.09.19;
+    Time=16:48:20;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -63,6 +63,21 @@ OBJECT Codeunit 170013 WellknownExceptions
       END;
 
       EXIT(SourceFieldID);
+    PROCEDURE RestoreTableIsEmpty@1000000000(TableID@1000000000 : Integer) : Boolean;
+    VAR
+      TableInformation@1000000001 : Record 2000000028;
+    BEGIN
+      TableInformation.SETFILTER("Company Name",'%1|%2',COMPANYNAME,'');
+      TableInformation.SETRANGE("Table No.",TableID);
+      TableInformation.FINDFIRST;
+      EXIT(TableInformation."No. of Records" = 0);
+    END;
+
+    PROCEDURE SkipRestore@1000000003(TableID@1000000000 : Integer) : Boolean;
+    BEGIN
+      CASE TableID OF
+        //170188:  // Now complete other Table
+        //  EXIT(TRUE);
     END;
 
     BEGIN

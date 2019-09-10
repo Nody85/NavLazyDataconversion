@@ -2,8 +2,8 @@ OBJECT Codeunit 170012 DataHelperFunction
 {
   OBJECT-PROPERTIES
   {
-    Date=03.09.19;
-    Time=14:41:07;
+    Date=08.09.19;
+    Time=20:47:52;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -140,6 +140,9 @@ OBJECT Codeunit 170012 DataHelperFunction
       ToRecordReference.OPEN(ToID);
       ToCount := ToRecordReference.COUNT;
       ToRecordReference.CLOSE;
+
+      IF FromCount = 0 THEN
+        EXIT;
 
       IF FromCount <> ToCount THEN
         ERROR(STRSUBSTNO(Error007,FromID,ToID));
@@ -518,6 +521,28 @@ OBJECT Codeunit 170012 DataHelperFunction
           EVALUATE(FromID,Object.Name);
           ToID := Object.ID;
           SaveData.CopyData(FromID,ToID);
+        UNTIL Object.NEXT = 0;
+    END;
+
+    PROCEDURE RestoreDataCopy@1000000005(FromID@1000000004 : Integer;ToID@1000000003 : Integer);
+    VAR
+      Object@1000000002 : Record 2000000001;
+      LazyDataConversion@1000000001 : Codeunit 170002;
+      RestoreData@1000000000 : Codeunit 170011;
+    BEGIN
+      IF FromID <> 0 THEN
+        Object.SETFILTER(Name,FORMAT(FromID));
+
+      IF ToID <> 0 THEN
+        Object.SETRANGE(ID,ToID);
+
+      Object.SETFILTER("Version List",STRSUBSTNO('*%1*',LazyDataConversion.GetProjectCode));
+
+      IF Object.FINDSET THEN
+        REPEAT
+          EVALUATE(ToID,Object.Name);
+          FromID := Object.ID;
+          RestoreData.CopyData(FromID,0,ToID,0);
         UNTIL Object.NEXT = 0;
     END;
 
