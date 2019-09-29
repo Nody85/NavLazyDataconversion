@@ -2,8 +2,8 @@ OBJECT Codeunit 170012 DataHelperFunction
 {
   OBJECT-PROPERTIES
   {
-    Date=08.09.19;
-    Time=20:47:52;
+    Date=27.09.19;
+    Time=11:04:17;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -474,9 +474,13 @@ OBJECT Codeunit 170012 DataHelperFunction
         DataQuantityCheck."Original Table Size" := TableInformation."Size (KB)";
         DataQuantityCheck.INSERT;
       END ELSE BEGIN
-        DataQuantityCheck."Original Amount Of Records" := TableInformation."No. of Records";
-        DataQuantityCheck."Original Table Size" := TableInformation."Size (KB)";
-        DataQuantityCheck.MODIFY;
+        IF DataQuantityCheck."Original Amount Of Records" = TableInformation."No. of Records" THEN
+          DataQuantityCheck.DELETE
+        ELSE BEGIN
+          DataQuantityCheck."Original Amount Of Records" := TableInformation."No. of Records";
+          DataQuantityCheck."Original Table Size" := TableInformation."Size (KB)";
+          DataQuantityCheck.MODIFY;
+        END;
       END;
     END;
 
