@@ -536,10 +536,10 @@ OBJECT Codeunit 170012 DataHelperFunction
       RestoreData@1000000000 : Codeunit 170011;
     BEGIN
       IF FromID <> 0 THEN
-        Object.SETFILTER(Name,FORMAT(FromID));
+        Object.SETFILTER(Name,FORMAT(ToID));
 
       IF ToID <> 0 THEN
-        Object.SETRANGE(ID,ToID);
+        Object.SETRANGE(ID,FromID);
 
       Object.SETFILTER("Version List",STRSUBSTNO('*%1*',LazyDataConversion.GetProjectCode));
 

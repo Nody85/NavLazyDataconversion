@@ -2,8 +2,8 @@ OBJECT Codeunit 170011 RestoreData
 {
   OBJECT-PROPERTIES
   {
-    Date=08.09.19;
-    Time=23:44:44;
+    Date=26.09.19;
+    Time=21:31:03;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -42,10 +42,10 @@ OBJECT Codeunit 170011 RestoreData
           DataHelperFunction.PreCheckDataPerCompanyIsEqual(FromID,ToID);
         END;
 
-        IF DataHelperFunction.TransferGlobalDataIsDouble(FromID) THEN
+        IF DataHelperFunction.RestoreGlobalDataIsDouble(ToID) THEN
           EXIT;
 
-        IF NOT DataHelperFunction.GetRestoreStatus(FromID) OR (FromFieldID <> 0) AND (ToFieldID <> 0) THEN BEGIN
+        IF NOT DataHelperFunction.GetRestoreStatus(ToID) OR (FromFieldID <> 0) AND (ToFieldID <> 0) THEN BEGIN
           FromRecordRef.OPEN(FromID);
           IF GUIALLOWED THEN BEGIN
             ProgressDialog.OPEN(CopyDataProgressDialog);
@@ -103,7 +103,7 @@ OBJECT Codeunit 170011 RestoreData
           FromRecordRef.CLOSE;
           DataHelperFunction.LogNewTableState(ToID);
           DataHelperFunction.PostCheckAmountOfRecords(FromID,ToID);
-          DataHelperFunction.SetRestoreStatusSuccessfull(FromID);
+          DataHelperFunction.SetRestoreStatusSuccessfull(ToID);
         END;
       END;
     END;
