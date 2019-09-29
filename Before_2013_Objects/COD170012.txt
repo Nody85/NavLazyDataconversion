@@ -169,6 +169,17 @@ OBJECT Codeunit 170012 DataHelperFunction
         EXIT(TRUE);
     END;
 
+    PROCEDURE RestoreGlobalDataIsDouble@50000(TableID@59000 : Integer) : Boolean;
+    VAR
+      DataCopyStatus@59001 : Record 170011;
+    BEGIN
+      IF NOT TableIsGlobalData(TableID) THEN
+        EXIT;
+
+      IF DataCopyStatus.GET(TableID) AND DataCopyStatus.Restored THEN
+        EXIT(TRUE);
+    END;
+
     LOCAL PROCEDURE TableIsGlobalData@59018(TableID@59000 : Integer) : Boolean;
     VAR
       Object@59001 : Record 2000000001;
@@ -287,16 +298,6 @@ OBJECT Codeunit 170012 DataHelperFunction
     BEGIN
       Object.SETRANGE(ID,FromID,ToID);
       Object.DELETEALL;
-    END;
-
-    PROCEDURE IsCustomerField@59010(TableID@59000 : Integer;FieldID@59001 : Integer) : Boolean;
-    BEGIN
-      //Exclude Customer Tables
-      IF TableID IN [50000..100000] THEN
-        EXIT(FALSE);
-      //Include Customer Field Range
-      IF FieldID IN [50000..100000] THEN
-        EXIT(TRUE);
     END;
 
     PROCEDURE DeleteTableByID@59011(TableID@1150000 : Integer);
