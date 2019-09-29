@@ -16,7 +16,8 @@ OBJECT Codeunit 170011 RestoreData
   CODE
   {
     VAR
-      CopyDataProgressDialog@59000 : TextConst 'DEU=Tabelle #####1#####:\Datensatz ####2#### von ####3#####;ENU=Table %1\Record ####2#### from ####3#####';
+      CopyDataProgressDialog@59000 : TextConst 'DEU=Tabelle #####1#####:\Datensatz ####2#### von ####3#####;ENU=Table #####1#####:\Record ####2#### from ####3#####;DES=Tabelle #####1#####:\Datensatz ####2#### von ####3#####;DEA=Tabelle #####1#####:\Datensatz ####2#### von ####3#####';
+      Error001@50000 : TextConst 'DEU=Fr den Datentyp %1 zu %2 existiert keine Definition!;ENU=There is no definition to allocate datatype %1 to %2!;DES=Fr den Datentyp %1 zu %2 existiert keine Definition!;DEA=Fr den Datentyp %1 zu %2 existiert keine Definition!';
 
     PROCEDURE CopyData@59001(FromID@59000 : Integer;FromFieldID@50001 : Integer;ToID@59001 : Integer;ToFieldID@50002 : Integer);
     VAR
@@ -83,11 +84,54 @@ OBJECT Codeunit 170011 RestoreData
                     IF ToFieldReference.TYPE = FromFieldReference.TYPE THEN BEGIN
                       IF (ToField.SQLDataType = ToField.SQLDataType::Integer) AND
                         (FromField.SQLDataType = FromField.SQLDataType::Varchar)
-                      THEN BEGIN
-                        ToFieldReference.VALUE := DataHelperFunction.SQLDatatypeConvertToInteger(FromFieldReference.VALUE);
-                      END ELSE
+                      THEN
+                        ToFieldReference.VALUE := DataHelperFunction.SQLDatatypeConvertToInteger(FromFieldReference.VALUE)
+                      ELSE
                         ToFieldReference.VALUE := FromFieldReference.VALUE;
                     END ELSE BEGIN
+                      CASE UPPERCASE(FORMAT(FromFieldReference.TYPE)) OF
+                        'INTEGER','OPTION':
+                          CASE UPPERCASE(FORMAT(ToFieldReference.TYPE)) OF
+                            'INTEGER','OPTION','BIGINTEGER','DECIMAL':
+                              ToFieldReference.VALUE := FromFieldReference.VALUE;
+                            'TEXT','CODE': //TODO CheckOPTIONVALUE WITH INT
+                               ToFieldReference.VALUE := FORMAT(FromFieldReference.VALUE);
+                            ELSE
+                              ERROR(STRSUBSTNO(Error001,FromFieldReference.TYPE,ToFieldReference.TYPE));
+                          END;
+                        'TEXT','CODE':
+                          CASE UPPERCASE(FORMAT(ToFieldReference.TYPE)) OF
+                            'TEXT','CODE':
+                              ToFieldReference.VALUE := FromFieldReference.VALUE;
+                            'BOOLEAN':
+                              BEGIN
+                                //79 Field 44
+                                //TEXT,CODE -> BOOLEAN
+                              END;
+                            ELSE
+                              ERROR(STRSUBSTNO(Error001,FromFieldReference.TYPE,ToFieldReference.TYPE));
+                          END;
+                        'MEDIASET','BLOB':
+                          CASE UPPERCASE(FORMAT(ToFieldReference.TYPE)) OF
+                            'MEDIASET','BLOB':
+                              BEGIN
+                                //TODO ? Only Item.Picture ?
+                              END;
+                            ELSE
+                              ERROR(STRSUBSTNO(Error001,FromFieldReference.TYPE,ToFieldReference.TYPE));
+                          END;
+                        'BOOLEAN':
+                          CASE UPPERCASE(FORMAT(ToFieldReference.TYPE)) OF
+                            'TEXT','CODE':
+                              BEGIN
+                                //BOOLEAN -> CODE
+                              END;
+                            ELSE
+                              ERROR(STRSUBSTNO(Error001,FromFieldReference.TYPE,ToFieldReference.TYPE));
+                          END;
+                        ELSE
+                          ERROR(STRSUBSTNO(Error001,FromFieldReference.TYPE,ToFieldReference.TYPE));
+                        END;
                       //DATATYPE MAPPING
                       //Optionvalue -> Integer
                     END;
