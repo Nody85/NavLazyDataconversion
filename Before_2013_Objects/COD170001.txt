@@ -2,8 +2,8 @@ OBJECT Codeunit 170001 Prequisit DataConversation
 {
   OBJECT-PROPERTIES
   {
-    Date=17.05.19;
-    Time=16:34:25;
+    Date=27.09.19;
+    Time=10:54:47;
     Modified=Yes;
     Version List=LAZYDATACONV;
   }
@@ -77,12 +77,15 @@ OBJECT Codeunit 170001 Prequisit DataConversation
 
     PROCEDURE IsUselessShit@59001(TableID@59000 : Integer) : Boolean;
     BEGIN
-      //Nutzlosen Object Manager Advanced aus der Steinzeit ausgrenzen
-      IF (TableID < 11102035) OR (TableID > 11102099) THEN
+      //Exclude useless Object Manager Advanced from the Stoneage
+      IF TableID IN [11102034..11102099] THEN
         EXIT(FALSE);
 
       //Exclude Upgradeobjects
-      IF (TableID < 104001) OR (TableID > 200000) THEN
+      IF TableID IN [104000..200000] THEN
+        EXIT(FALSE);
+
+      IF TableID IN [50000..100000] THEN
         EXIT(FALSE);
 
       //Exclude Systemobjects
