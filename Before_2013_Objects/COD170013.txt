@@ -54,15 +54,17 @@ OBJECT Codeunit 170013 WellknownExceptions
 
     PROCEDURE RedirectFieldRestore@50001(SourceTableID@50000 : Integer;SourceFieldID@50001 : Integer) : Integer;
     BEGIN
-      CASE SourceTableID OF
+      //CASE SourceTableID OF
       //STORE Table 18 Field 50000
       //RESTORE Table 18 Field 60000
       //  18:
       //    IF SourceFieldID = 50000 THEN
       //      EXIT(60000);
-      END;
+      //END;
 
       EXIT(SourceFieldID);
+    END;
+
     PROCEDURE RestoreTableIsEmpty@1000000000(TableID@1000000000 : Integer) : Boolean;
     VAR
       TableInformation@1000000001 : Record 2000000028;
@@ -75,9 +77,10 @@ OBJECT Codeunit 170013 WellknownExceptions
 
     PROCEDURE SkipRestore@1000000003(TableID@1000000000 : Integer) : Boolean;
     BEGIN
-      CASE TableID OF
-        //170188:  // Now complete other Table
-        //  EXIT(TRUE);
+      //CASE TableID OF
+      //  170188:  // Now complete other Table
+      //    EXIT(TRUE);
+      //END;
     END;
 
     BEGIN
